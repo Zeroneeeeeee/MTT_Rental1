@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "279852451829",
+    "firebase_url": "https://timtroappli-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "timtroappli",
+    "storage_bucket": "timtroappli.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:279852451829:android:683df567d6f51b4e8982bc",
+        "android_client_info": {
+          "package_name": "com.example.mtt_rental"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJyCdwew0Gz4oXVAB3vC-8TzOGfSTFJgs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:279852451829:android:757bcb5576a29f128982bc",
+        "android_client_info": {
+          "package_name": "com.example.timtroapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJyCdwew0Gz4oXVAB3vC-8TzOGfSTFJgs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
