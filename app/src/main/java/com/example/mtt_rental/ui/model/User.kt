@@ -7,5 +7,6 @@ data class User(
     val email: String = "",
     val phoneNumber: String = "",
     val userType: String = "",
-    val address: String? = null   // dấu ? nghĩa là có thể null
+    val address: String? = null,   // dấu ? nghĩa là có thể null
+    val favoriteApartments: List<String> = emptyList() // Danh sách ID các căn hộ yêu thích
 )

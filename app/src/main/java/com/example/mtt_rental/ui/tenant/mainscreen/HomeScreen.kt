@@ -3,6 +3,7 @@ package com.example.mtt_rental.ui.tenant.mainscreen
 import android.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,8 +17,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
@@ -43,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mtt_rental.repo.UserRepo
 import com.example.mtt_rental.ui.model.Apartment
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -151,19 +156,22 @@ fun InfoIconText(iconRes: Int, text: String, size: Int = 16) {
 fun PropertyRowList(apartmentList: List<Apartment> = emptyList()){
     LazyRow(){
         items(apartmentList){
-            PropertyCard(it.title,it.price.toString(),it.location)
+            PropertyCard(apartment = it)
         }
     }
 }
 
 @Composable
 fun PropertyCard(
-    title:String= "Title",
-    cost:String = "Cost/Time",
-    location:String = "Location"
+    apartment: Apartment? = null,
+    title: String = apartment?.title ?: "Title",
+    cost: String = apartment?.price?.toString() ?: "Cost/Time",
+    location: String = apartment?.location ?: "Location"
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(end = 16.dp),
         shape = RoundedCornerShape(18.dp),
         elevation = CardDefaults.cardElevation(6.dp)
     ) {
@@ -180,8 +188,39 @@ fun PropertyCard(
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(10.dp)
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Favorite heart icon
+                    if (apartment != null) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable {
+                                    UserRepo.toggleFavorite(apartment.apartmentId)
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    if (UserRepo.isFavorite(apartment.apartmentId))
+                                        Icons.Default.Favorite
+                                    else
+                                        Icons.Default.FavoriteBorder,
+                                    contentDescription = "Favorite",
+                                    tint = if (UserRepo.isFavorite(apartment.apartmentId))
+                                        Color.Red
+                                    else
+                                        Color.Gray,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Rating
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = Color.White,
@@ -234,12 +273,13 @@ fun PropertyCard(
 
 @Composable
 fun ColumnItem(
+    apartment: Apartment? = null,
     modifier: Modifier = Modifier,
-    title: String = "",
-    location: String ="",
-    cost: String="",
-    rating: String="",
-    ) {
+    title: String = apartment?.title ?: "Modern Apartment",
+    location: String = apartment?.location ?: "Downtown San Jose",
+    cost: String = apartment?.price?.toString() ?: "$2500/month",
+    rating: String = apartment?.rating?.toString() ?: "4.8",
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -249,14 +289,45 @@ fun ColumnItem(
             modifier = Modifier.padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painterResource(R.drawable.ic_menu_gallery),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
+            Box {
+                Image(
+                    painterResource(R.drawable.ic_menu_gallery),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                // Favorite heart icon for ColumnItem
+                if (apartment != null) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White,
+                        shadowElevation = 1.dp,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(18.dp)
+                            .clickable {
+                                UserRepo.toggleFavorite(apartment.apartmentId)
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                if (UserRepo.isFavorite(apartment.apartmentId))
+                                    Icons.Default.Favorite
+                                else
+                                    Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorite",
+                                tint = if (UserRepo.isFavorite(apartment.apartmentId))
+                                    Color.Red
+                                else
+                                    Color.Gray,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

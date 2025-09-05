@@ -5,10 +5,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,10 +26,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.mtt_rental.repo.UserRepo
+import com.example.mtt_rental.ui.model.Apartment
 
 @Preview(showBackground = true)
 @Composable
 fun FavoriteScreen() {
+    val favoriteApartments = UserRepo.favoriteApartments
+
+    LaunchedEffect(Unit) {
+        UserRepo.refreshFavoriteApartments()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -37,43 +51,59 @@ fun FavoriteScreen() {
             color = Color(0xFFEFB8C8)
         )
         Spacer(Modifier.height(22.dp))
-        FavoriteHouseCard(
-            title = "Cozy Villa",
-            price = "$4000/month",
-            address = "123 Blossom Hill Rd",
-            imageRes = R.drawable.ic_menu_gallery,
-            beds = "5 Beds",
-            baths = "3 Baths",
-            size = "3000 sqft",
-            rating = "5.0"
-        )
-        Spacer(Modifier.height(14.dp))
-        FavoriteHouseCard(
-            title = "Modern Flat",
-            price = "$2700/month",
-            address = "456 Market Street",
-            imageRes = R.drawable.ic_menu_gallery,
-            beds = "2 Beds",
-            baths = "2 Baths",
-            size = "1100 sqft",
-            rating = "4.7"
-        )
-        Spacer(Modifier.height(14.dp))
-        FavoriteHouseCard(
-            title = "Family Home",
-            price = "$3200/month",
-            address = "789 Oak Ave",
-            imageRes = R.drawable.ic_menu_gallery,
-            beds = "4 Beds",
-            baths = "3 Baths",
-            size = "2100 sqft",
-            rating = "4.8"
-        )
+
+        if (favoriteApartments.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.Favorite,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "No favorite apartments yet",
+                        fontSize = 18.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Start adding apartments to your favorites!",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                items(favoriteApartments) { apartment ->
+                    FavoriteHouseCard(
+                        apartment = apartment,
+                        title = apartment.title,
+                        price = "${apartment.price}/month",
+                        address = apartment.location,
+                        imageRes = R.drawable.ic_menu_gallery,
+                        beds = "3 Beds", // You can add these to Apartment model later
+                        baths = "2 Baths",
+                        size = "${apartment.area.toInt()} sqft",
+                        rating = apartment.rating.toString()
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
 fun FavoriteHouseCard(
+    apartment: Apartment? = null,
     title: String,
     price: String,
     address: String,
@@ -118,12 +148,39 @@ fun FavoriteHouseCard(
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    price,
-                    color = Color(0xFFEFB8C8),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        price,
+                        color = Color(0xFFEFB8C8),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                    // Remove from favorites button
+                    if (apartment != null) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFFFEBEE),
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable {
+                                    UserRepo.removeFromFavorites(apartment.apartmentId)
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Favorite,
+                                    contentDescription = "Remove from favorites",
+                                    tint = Color.Red,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Star,
