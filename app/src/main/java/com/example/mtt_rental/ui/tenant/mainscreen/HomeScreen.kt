@@ -22,20 +22,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,8 +51,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mtt_rental.model.Apartment
 import com.example.mtt_rental.repo.UserRepo
-import com.example.mtt_rental.ui.model.Apartment
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -59,19 +63,37 @@ import com.google.firebase.database.ValueEventListener
 fun HomeScreen() {
     val firebaseRef = FirebaseDatabase.getInstance().getReference("apartments")
     val apartmentList = remember { mutableStateListOf<Apartment>() }
-    LaunchedEffect(Unit){
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Filtered apartment list based on search query
+    val filteredApartmentList = remember(apartmentList, searchQuery) {
+        if (searchQuery.isEmpty()) {
+            apartmentList
+        } else {
+            apartmentList.filter { apartment ->
+                apartment.title.contains(searchQuery, ignoreCase = true) ||
+                        apartment.location.contains(searchQuery, ignoreCase = true) ||
+                        apartment.description.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
         firebaseRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                apartmentList.clear() // Clear existing list to avoid duplicates
                 if (snapshot.exists()) {
                     for (apartmentSnapshot in snapshot.children) {
                         val empData = apartmentSnapshot.getValue(Apartment::class.java)
-                        apartmentList.add(empData!!)
+                        if (empData != null) {
+                            apartmentList.add(empData)
+                        }
                     }
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                TODO("Not yet implemented")
+                // Handle error appropriately
             }
 
         })
@@ -94,49 +116,69 @@ fun HomeScreen() {
             Text("San Jose, CA", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray)
         }
-        Spacer(Modifier.height(22.dp))
-        // Category Tabs
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            CategoryIconWithLabel("Apartment")
-            CategoryIconWithLabel("Condo")
-            CategoryIconWithLabel("House")
-            CategoryIconWithLabel("Flat")
-            CategoryIconWithLabel("Dept")
-        }
+        Spacer(Modifier.height(16.dp))
+        // Search bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            shape = RoundedCornerShape(18.dp),
+            placeholder = {
+                Text(
+                    "Search apartment, location...",
+                    color = Color.Gray
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = Color(0xFFEFB8C8)
+                )
+            },
+            singleLine = true
+        )
+
         Spacer(Modifier.height(28.dp))
-        // Recommended Title
+
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Recommended", fontWeight = FontWeight.Bold, fontSize = 19.sp)
+            Text(
+                if (searchQuery.isNotEmpty()) "Search Results" else "Recommended",
+                fontWeight = FontWeight.Bold,
+                fontSize = 19.sp
+            )
             Spacer(Modifier.weight(1f))
-            Text("More", color = Color(0xFFEFB8C8), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            if (searchQuery.isEmpty()) {
+                Text(
+                    "More",
+                    color = Color(0xFFEFB8C8),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+            } else {
+                Text(
+                    "${filteredApartmentList.size} found",
+                    color = Color(0xFFEFB8C8),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+            }
         }
         Spacer(Modifier.height(18.dp))
-        // Duplex Home Card
-        PropertyRowList(apartmentList)
+        // Property List (filtered or all)
+        PropertyRowList(filteredApartmentList)
         Spacer(Modifier.height(18.dp))
-        // Nearby Title
-        Text("Nearby your location", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-        Spacer(Modifier.height(12.dp))
-        // Nearby Card
-        ColumnItem()
+        // Show nearby section only when not searching
+        if (searchQuery.isEmpty()) {
+            Text("Nearby your location", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+            Spacer(Modifier.height(12.dp))
+            ColumnItem()
+        }
     }
 }
 
-@Composable
-fun CategoryIconWithLabel(label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
-            color = Color(0xFFF6EAF1),
-            shape = RoundedCornerShape(24.dp),
-            modifier = Modifier.size(44.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                Icon(Icons.Default.Home, contentDescription = label, tint = Color(0xFFEFB8C8))
-            }
-        }
-        Text(label, fontSize = 11.sp, color = Color.Gray)
-    }
-}
 
 @Composable
 fun InfoIconText(iconRes: Int, text: String, size: Int = 16) {
@@ -153,9 +195,9 @@ fun InfoIconText(iconRes: Int, text: String, size: Int = 16) {
 }
 
 @Composable
-fun PropertyRowList(apartmentList: List<Apartment> = emptyList()){
-    LazyRow(){
-        items(apartmentList){
+fun PropertyRowList(apartmentList: List<Apartment> = emptyList()) {
+    LazyRow() {
+        items(apartmentList) {
             PropertyCard(apartment = it)
         }
     }
@@ -165,12 +207,12 @@ fun PropertyRowList(apartmentList: List<Apartment> = emptyList()){
 fun PropertyCard(
     apartment: Apartment? = null,
     title: String = apartment?.title ?: "Title",
-    cost: String = apartment?.price?.toString() ?: "Cost/Time",
+    cost: String = "${apartment?.price?.toString()}/month",
     location: String = apartment?.location ?: "Location"
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
+            .width(300.dp)
             .padding(end = 16.dp),
         shape = RoundedCornerShape(18.dp),
         elevation = CardDefaults.cardElevation(6.dp)
@@ -242,30 +284,17 @@ fun PropertyCard(
                 }
             }
             Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Spacer(Modifier.weight(1f))
-                    Text(
-                        cost,
-                        color = Color(0xFFEFB8C8),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    cost,
+                    color = Color(0xFFEFB8C8),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
                 Spacer(Modifier.height(4.dp))
                 Text(location, fontSize = 13.sp, color = Color.Gray)
                 Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    InfoIconText(R.drawable.ic_menu_mylocation, "3 Beds")
-                    InfoIconText(R.drawable.ic_menu_compass, "4 Baths")
-                    InfoIconText(R.drawable.ic_menu_crop, "2450 sqft")
-                }
             }
         }
     }
@@ -273,9 +302,8 @@ fun PropertyCard(
 
 @Composable
 fun ColumnItem(
-    apartment: Apartment? = null,
     modifier: Modifier = Modifier,
-    title: String = apartment?.title ?: "Modern Apartment",
+    apartment: Apartment? = null, title: String = apartment?.title ?: "Modern Apartment",
     location: String = apartment?.location ?: "Downtown San Jose",
     cost: String = apartment?.price?.toString() ?: "$2500/month",
     rating: String = apartment?.rating?.toString() ?: "4.8",
@@ -366,6 +394,6 @@ fun ColumnItem(
 }
 
 @Composable
-fun ColumnList(modifier: Modifier = Modifier,) {
-    
+fun ColumnList(modifier: Modifier = Modifier) {
+
 }

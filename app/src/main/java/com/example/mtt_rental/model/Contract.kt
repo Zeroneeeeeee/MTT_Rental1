@@ -1,4 +1,4 @@
-package com.example.mtt_rental.ui.model
+package com.example.mtt_rental.model
 
 data class Contract(
     val idContract: String = "",

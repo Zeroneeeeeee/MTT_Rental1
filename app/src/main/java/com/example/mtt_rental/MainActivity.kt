@@ -11,7 +11,6 @@ import com.example.mtt_rental.ui.theme.MTT_RentalTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             MTT_RentalTheme {
                 AppScreen()

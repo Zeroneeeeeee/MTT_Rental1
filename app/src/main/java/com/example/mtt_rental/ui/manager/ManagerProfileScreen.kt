@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mtt_rental.repo.UserRepo
 
 @Preview(showBackground = true)
 @Composable
@@ -44,7 +45,6 @@ fun ManagerProfileScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Profile Header
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -76,7 +76,7 @@ fun ManagerProfileScreen() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Manager Name",
+                        text = UserRepo.profileName,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -111,13 +111,13 @@ fun ManagerProfileScreen() {
         ProfileInfoItem(
             icon = Icons.Default.Email,
             title = "Email",
-            value = "manager@example.com"
+            value = UserRepo.email
         )
 
         ProfileInfoItem(
             icon = Icons.Default.Phone,
             title = "Phone",
-            value = "+1 (555) 123-4567"
+            value = UserRepo.phoneNumber
         )
 
         Spacer(modifier = Modifier.height(24.dp))

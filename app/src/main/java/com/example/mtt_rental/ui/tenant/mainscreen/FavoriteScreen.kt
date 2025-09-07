@@ -27,7 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.mtt_rental.repo.UserRepo
-import com.example.mtt_rental.ui.model.Apartment
+import com.example.mtt_rental.model.Apartment
 
 @Preview(showBackground = true)
 @Composable
@@ -90,9 +90,6 @@ fun FavoriteScreen() {
                         price = "${apartment.price}/month",
                         address = apartment.location,
                         imageRes = R.drawable.ic_menu_gallery,
-                        beds = "3 Beds", // You can add these to Apartment model later
-                        baths = "2 Baths",
-                        size = "${apartment.area.toInt()} sqft",
                         rating = apartment.rating.toString()
                     )
                 }
@@ -108,9 +105,6 @@ fun FavoriteHouseCard(
     price: String,
     address: String,
     imageRes: Int,
-    beds: String,
-    baths: String,
-    size: String,
     rating: String
 ) {
     Card(
@@ -140,25 +134,18 @@ fun FavoriteHouseCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(address, fontSize = 13.sp, color = Color.Gray)
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    InfoIconText(R.drawable.ic_menu_mylocation, beds, size = 13)
-                    InfoIconText(R.drawable.ic_menu_compass, baths, size = 13)
-                    InfoIconText(R.drawable.ic_menu_crop, size, size = 13)
-                }
+                Text(
+                    price,
+                    color = Color(0xFFEFB8C8),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        price,
-                        color = Color(0xFFEFB8C8),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
-                    // Remove from favorites button
                     if (apartment != null) {
                         Surface(
                             shape = CircleShape,
@@ -180,6 +167,7 @@ fun FavoriteHouseCard(
                         }
                     }
                 }
+
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(

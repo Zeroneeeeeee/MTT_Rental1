@@ -1,6 +1,6 @@
 package com.example.mtt_rental.repo
 
-import com.example.mtt_rental.ui.model.User
+import com.example.mtt_rental.model.User
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase

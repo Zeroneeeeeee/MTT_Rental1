@@ -1,37 +1,39 @@
 package com.example.mtt_rental.ui.manager
 
-import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.Button
-import androidx.compose.material3.Surface
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.platform.LocalContext
-import com.example.mtt_rental.repo.UserRepo
-import com.example.mtt_rental.model.Apartment
+import com.example.mtt_rental.model.Room
 import com.google.firebase.database.FirebaseDatabase
-
 
 @Preview(showBackground = true)
 @Composable
-fun ManagerAddRentalScreen(editApartmentId: String = "") {
-    val firebaseRef = FirebaseDatabase.getInstance().getReference("apartments")
-    val editApartment = firebaseRef.child(editApartmentId)
-    Log.d("Check" , editApartmentId)
+fun AddRoomScreen(modifier: Modifier = Modifier) {
+    val firebaseRef = FirebaseDatabase.getInstance().getReference("rooms")
     val context = LocalContext.current
-    var location by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var image by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var rental by remember { mutableStateOf("") }
     var electric by remember { mutableStateOf("") }
     var water by remember { mutableStateOf("") }
@@ -47,27 +49,11 @@ fun ManagerAddRentalScreen(editApartmentId: String = "") {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item{
+            item {
                 OutlinedTextField(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = { Text("Location") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                )
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                )
-                OutlinedTextField(
-                    value = image,
-                    onValueChange = { image = it },
-                    label = { Text("Image") },
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
@@ -91,7 +77,7 @@ fun ManagerAddRentalScreen(editApartmentId: String = "") {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
-            item{
+            item {
                 Text("Cost")
                 OutlinedTextField(
                     value = rental,
@@ -130,36 +116,28 @@ fun ManagerAddRentalScreen(editApartmentId: String = "") {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            item{
-
-            }
-            item{
+            item {
                 Button(
                     onClick = {
-                        val apartmentId =
-                            if (editApartmentId == "") firebaseRef.push().key!! else editApartmentId
-                        val newApartment = Apartment(
-                            apartmentId = apartmentId,
-                            title = title,
-                            description = "",
-                            location = location,
-                            price = rental.toInt(),
-                            image = "",
-                            maxRenter = 4,
-                            ownerId = UserRepo.idUser
+                        val room = Room(
+                            idRoom = name,
+                            maxRenter = maxPeople.toInt(),
+                            area = area.toLong(),
+                            idApartment = "",
+                            description = "TODO()",
                         )
-                        firebaseRef.child(apartmentId).setValue(newApartment)
+                        firebaseRef.child(name).setValue(room)
                             .addOnCompleteListener {
                                 Toast.makeText(
                                     context,
-                                    "Apartment added successfully",
+                                    "Room added successfully",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
                             .addOnFailureListener {
                                 Toast.makeText(
                                     context,
-                                    "Failed to add apartment",
+                                    "Failed to add room",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -172,4 +150,3 @@ fun ManagerAddRentalScreen(editApartmentId: String = "") {
         }
     }
 }
-

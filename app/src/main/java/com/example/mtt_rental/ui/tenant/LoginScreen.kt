@@ -24,12 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mtt_rental.repo.UserRepo
-import com.example.mtt_rental.ui.model.User
+import com.example.mtt_rental.model.User
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -106,7 +107,8 @@ fun LoginScreen(
                 if (passwordError != null) Text(passwordError!!, color = Color.Red)
             },
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation()
         )
         Spacer(Modifier.height(6.dp))
         Text(
