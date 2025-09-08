@@ -45,7 +45,10 @@ import com.google.firebase.database.ValueEventListener
 
 @Preview(showBackground = true)
 @Composable
-fun RegisterScreen(toLogin: () -> Unit = {}) {
+fun RegisterScreen(
+    toLogin: () -> Unit = {},
+    toOTPVerification: (String, User) -> Unit = { _, _ -> }
+) {
     val firebaseRef = FirebaseDatabase.getInstance().getReference("users")
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -124,7 +127,7 @@ fun RegisterScreen(toLogin: () -> Unit = {}) {
         InputFieldRoundedWithIcon(
             value = mobile,
             onValueChange = { mobile = it; mobileError = null },
-            label = "Mobile",
+            label = "Mobile (with country code, e.g. +84)",
             icon = Icons.Default.Phone,
             inputKeyboardType = KeyboardType.Phone,
             errorText = mobileError
@@ -163,7 +166,11 @@ fun RegisterScreen(toLogin: () -> Unit = {}) {
                         mobileError = "Không được bỏ trống số điện thoại"
                         hasError = true
                     }
-                    regMessage = if (hasError) "" else "Đăng ký thành công!"
+//                    else if (!mobile.startsWith("+")) {
+//                        mobileError = "Số điện thoại phải bao gồm mã quốc gia (ví dụ: +84)"
+//                        hasError = true
+//                    }
+
                     if (!hasError) {
                         val newUser = User(
                             idUser = username,
@@ -173,9 +180,8 @@ fun RegisterScreen(toLogin: () -> Unit = {}) {
                             profileName = username,
                             userType = role
                         )
-                        firebaseRef.child(username).setValue(newUser)
-                        username = ""; password = ""; email = ""; mobile = ""
-                        toLogin()
+                        // Navigate to OTP verification instead of directly registering
+                        toOTPVerification(mobile, newUser)
                     }
                 },
                 shape = CircleShape,

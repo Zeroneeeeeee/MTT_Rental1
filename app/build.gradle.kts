@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.firebase.database)
+    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui.android)
     testImplementation(libs.junit)

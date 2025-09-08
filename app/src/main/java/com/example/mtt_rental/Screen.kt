@@ -3,6 +3,7 @@ package com.example.mtt_rental
 sealed interface Screen {
     data object LoginScreen: Screen
     data object RegisterScreen: Screen
+    data object OTPVerificationScreen : Screen
     data object HomeScreen: Screen
     data object MainScreen: Screen
     data object FavoriteScreen: Screen
