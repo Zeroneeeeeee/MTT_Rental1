@@ -1,5 +1,6 @@
 package com.example.mtt_rental.ui.manager
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,17 +21,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.mtt_rental.Screen
+import com.example.mtt_rental.dtmodel.RoomTypeVM
 import com.example.mtt_rental.ui.tenant.DetailsScreen
-import java.util.Map.entry
+import com.example.mtt_rental.utils.toRoomTypeVM
+import com.example.mtt_rental.utils.toRoomVM
+import com.example.mtt_rental.viewmodel.manager.ManagerScreenViewModel
 
 @Preview(showBackground = true)
 @Composable
-fun ManagerScreen() {
+fun ManagerScreen(viewModel: ManagerScreenViewModel = viewModel()) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    val roomTypeList = remember { mutableStateListOf<RoomTypeVM>() }
     val backStack = remember { mutableStateListOf<Screen>(Screen.ManagerDashboardScreen) }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -46,7 +52,12 @@ fun ManagerScreen() {
                         ManagerManageScreen(
                             toAddRenterScreen = { backStack.add(Screen.ManagerAddApartmentScreen("")) },
                             toEditScreen = { apartmentId ->
-                                backStack.add(Screen.ManagerAddApartmentScreen(apartmentId))
+                                Log.d("ManagerManageScreen", apartmentId)
+                                viewModel.loadRoomTypesAndRooms(apartmentId) { list ->
+                                    roomTypeList.clear()
+                                    roomTypeList.addAll(list)
+                                    backStack.add(Screen.ManagerAddApartmentScreen(apartmentId))
+                                }
                             },
                             toDetailScreen = { apartmentId ->
                                 backStack.add(Screen.DetailScreen(apartmentId))
@@ -56,11 +67,28 @@ fun ManagerScreen() {
                     entry<Screen.ManagerProfileScreen> {
                         ManagerProfileScreen()
                     }
-                    entry<Screen.ManagerAddApartmentScreen> {(id) ->
-                        ManagerAddRentalScreen(id)
+                    entry<Screen.ManagerAddApartmentScreen> { screen ->
+                        ManagerAddRentalScreen(
+                            roomTypeList = roomTypeList,
+                            editApartmentId = screen.updateId,
+                            toManageScreen = {
+                                backStack.clear()
+                                backStack.add(Screen.ManagerManageScreen)
+                                roomTypeList.clear()
+                            },
+                            toAddRoomScreen = { backStack.add(Screen.AddRoomScreen(screen.updateId)) }
+                        )
                     }
-                    entry<Screen.DetailScreen> {(id) ->
+                    entry<Screen.DetailScreen> { (id) ->
                         DetailsScreen(id)
+                    }
+                    entry<Screen.AddRoomScreen> { (id)->
+                        AddRoomScreen(
+                            onAddRoomTypeEvent = {
+                                roomTypeList.add(it)
+                                backStack.add(Screen.ManagerAddApartmentScreen(id))//
+                            }
+                        )
                     }
                 }
             )

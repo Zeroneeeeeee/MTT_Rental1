@@ -26,14 +26,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mtt_rental.model.User
-import com.google.firebase.FirebaseException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthOptions
-import com.google.firebase.auth.PhoneAuthProvider
-import com.google.firebase.database.FirebaseDatabase
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mtt_rental.viewmodel.tenant.OTPVerificationViewModel
+import com.example.mtt_rental.viewmodel.tenant.VerificationResult
 import kotlinx.coroutines.delay
-import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,54 +37,42 @@ fun OTPVerificationScreen(
     phoneNumber: String,
     userData: User,
     onVerificationSuccess: () -> Unit = {},
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    viewModel: OTPVerificationViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    var otpCode by remember { mutableStateOf("") }
-    var verificationId by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    var successMessage by remember { mutableStateOf("") }
     var resendCountdown by remember { mutableStateOf(60) }
     var canResend by remember { mutableStateOf(false) }
 
-    val auth = FirebaseAuth.getInstance()
-    val database = FirebaseDatabase.getInstance()
-    val userRef = database.getReference("users")
+    val otpCode by viewModel.otpCode
+    val isLoading by viewModel.isLoading
+    val errorMessage by viewModel.errorMessage
+    val successMessage by viewModel.successMessage
+    val verificationResult by viewModel.verificationResult
 
-    // Callback for phone verification
-    val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-        override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-            // Auto-retrieval or instant verification succeeded
-            otpCode = credential.smsCode ?: ""
-            verifyOTP(
-                credential, userData, userRef,
-                onSuccess = {
-                    successMessage = "Đăng ký thành công!"
-                    onVerificationSuccess()
-                },
-                onError = { errorMessage = it }
-            )
-        }
+    // Handle verification result
+    LaunchedEffect(verificationResult) {
+        val result = verificationResult
+        when (result) {
+            is VerificationResult.Success -> {
+                onVerificationSuccess()
+                viewModel.clearVerificationResult()
+            }
 
-        override fun onVerificationFailed(e: FirebaseException) {
-            isLoading = false
-            errorMessage = "Gửi OTP thất bại: ${e.message}"
-        }
+            is VerificationResult.Error -> {
+                // Error is already handled in errorMessage state
+                viewModel.clearVerificationResult()
+            }
 
-        override fun onCodeSent(
-            verId: String,
-            token: PhoneAuthProvider.ForceResendingToken
-        ) {
-            verificationId = verId
-            isLoading = false
-            successMessage = "Mã OTP đã được gửi đến số điện thoại của bạn"
+            null -> {
+                // No result yet
+            }
         }
     }
 
-    // Start countdown timer
+    // Start countdown timer and send initial OTP
     LaunchedEffect(Unit) {
-        sendOTP("+84$phoneNumber", callbacks, context as Activity)
+        viewModel.sendOTP(phoneNumber, context as Activity)
         while (resendCountdown > 0) {
             delay(1000)
             resendCountdown--
@@ -145,10 +129,7 @@ fun OTPVerificationScreen(
         // OTP Input
         OTPInputField(
             otpCode = otpCode,
-            onOtpChange = {
-                otpCode = it
-                errorMessage = ""
-            },
+            onOtpChange = { viewModel.updateOtpCode(it) },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -157,24 +138,7 @@ fun OTPVerificationScreen(
         // Verify Button
         Button(
             onClick = {
-                if (otpCode.length == 6) {
-                    isLoading = true
-                    val credential = PhoneAuthProvider.getCredential(verificationId, otpCode)
-                    verifyOTP(
-                        credential, userData, userRef,
-                        onSuccess = {
-                            isLoading = false
-                            successMessage = "Đăng ký thành công!"
-                            onVerificationSuccess()
-                        },
-                        onError = {
-                            isLoading = false
-                            errorMessage = it
-                        }
-                    )
-                } else {
-                    errorMessage = "Vui lòng nhập đầy đủ 6 số"
-                }
+                viewModel.verifyOTP(userData)
             },
             enabled = !isLoading && otpCode.length == 6,
             modifier = Modifier
@@ -200,8 +164,7 @@ fun OTPVerificationScreen(
                 onClick = {
                     canResend = false
                     resendCountdown = 60
-                    isLoading = true
-                    sendOTP("+84$phoneNumber", callbacks, context as Activity)
+                    viewModel.sendOTP(phoneNumber, context as Activity)
                 }
             ) {
                 Text("Gửi lại mã OTP")
@@ -323,43 +286,6 @@ private fun OTPInputField(
     }
 }
 
-private fun sendOTP(
-    phoneNumber: String,
-    callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks,
-    activity: Activity
-) {
-    val options = PhoneAuthOptions.newBuilder(FirebaseAuth.getInstance())
-        .setPhoneNumber(phoneNumber)
-        .setTimeout(60L, TimeUnit.SECONDS)
-        .setActivity(activity)
-        .setCallbacks(callbacks)
-        .build()
-    PhoneAuthProvider.verifyPhoneNumber(options)
-}
-
-private fun verifyOTP(
-    credential: PhoneAuthCredential,
-    userData: User,
-    userRef: com.google.firebase.database.DatabaseReference,
-    onSuccess: () -> Unit,
-    onError: (String) -> Unit
-) {
-    FirebaseAuth.getInstance().signInWithCredential(credential)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                // OTP verified successfully, now save user to database
-                userRef.child(userData.idUser).setValue(userData)
-                    .addOnSuccessListener {
-                        onSuccess()
-                    }
-                    .addOnFailureListener { exception ->
-                        onError("Lỗi lưu thông tin người dùng: ${exception.message}")
-                    }
-            } else {
-                onError("Mã OTP không đúng. Vui lòng thử lại.")
-            }
-        }
-}
 
 @Preview(showBackground = true)
 @Composable

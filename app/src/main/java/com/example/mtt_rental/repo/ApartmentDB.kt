@@ -1,6 +1,7 @@
 package com.example.mtt_rental.repo
 
 import com.example.mtt_rental.model.Apartment
+import com.example.mtt_rental.model.RoomType
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -40,5 +41,23 @@ object ApartmentDB {
                 onError(error)
             }
         })
+    }
+
+    fun getRoomTypesByApartmentId(
+        id: String,
+        onResult: (List<RoomType>?) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        apartmentRef.child(id).child("roomTypes")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val list = snapshot.children.mapNotNull {
+                    it.getValue(RoomType::class.java)
+                }
+                onResult(list)
+            }
+            .addOnFailureListener { ex ->
+                onError(ex)
+            }
     }
 }

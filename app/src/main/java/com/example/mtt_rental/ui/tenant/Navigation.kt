@@ -7,8 +7,8 @@ import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.mtt_rental.Screen
+import com.example.mtt_rental.dtmodel.RoomTypeVM
 import com.example.mtt_rental.model.User
-import com.example.mtt_rental.ui.manager.ManagerAddRentalScreen
 import com.example.mtt_rental.ui.manager.ManagerScreen
 import com.example.mtt_rental.ui.tenant.mainscreen.UserScreen
 
@@ -16,7 +16,7 @@ import com.example.mtt_rental.ui.tenant.mainscreen.UserScreen
 fun AppScreen() {
     val backStack = remember { mutableStateListOf<Screen>(Screen.LoginScreen) }
     var pendingUserData: User? = null
-    var pendingPhoneNumber: String = ""
+    var pendingPhoneNumber = ""
 
     NavDisplay(
         backStack = backStack,
@@ -67,9 +67,7 @@ fun AppScreen() {
             entry(Screen.ManagerMainScreen) {
                 ManagerScreen()
             }
-            entry(Screen.AddApartment){
-                ManagerAddRentalScreen()
-            }
+
         }
     )
 }

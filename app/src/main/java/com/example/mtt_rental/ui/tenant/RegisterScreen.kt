@@ -30,7 +30,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,46 +37,53 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.mtt_rental.model.User
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mtt_rental.viewmodel.tenant.RegisterViewModel
+import com.example.mtt_rental.viewmodel.tenant.ValidationResult
 
 @Preview(showBackground = true)
 @Composable
 fun RegisterScreen(
     toLogin: () -> Unit = {},
-    toOTPVerification: (String, User) -> Unit = { _, _ -> }
+    toOTPVerification: (String, User) -> Unit = { _, _ -> },
+    viewModel: RegisterViewModel = viewModel()
 ) {
-    val firebaseRef = FirebaseDatabase.getInstance().getReference("users")
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var mobile by rememberSaveable { mutableStateOf("") }
     var role by rememberSaveable { mutableStateOf("") }
-    var regMessage by rememberSaveable { mutableStateOf("") }
-    val database = FirebaseDatabase.getInstance()
-    val userRef = database.getReference("users")
-    val userList = remember { mutableStateListOf<User>() }
 
     var usernameError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
     var mobileError by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        userRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                userList.clear()
-                for (userSnapshot in snapshot.children) {
-                    val user = userSnapshot.getValue(User::class.java)
-                    if (user != null) userList.add(user)
-                }
+    val isLoading by viewModel.isLoading
+    val validationResult by viewModel.validationResult
+
+    // Handle validation result
+    LaunchedEffect(validationResult) {
+        val result = validationResult
+        when (result) {
+            is ValidationResult.Success -> {
+                toOTPVerification(mobile, result.user)
+                viewModel.clearValidationResult()
             }
 
-            override fun onCancelled(error: DatabaseError) {}
-        })
+            is ValidationResult.Error -> {
+                usernameError = result.errors["username"]
+                passwordError = result.errors["password"]
+                emailError = result.errors["email"]
+                mobileError = result.errors["mobile"]
+            }
+
+            null -> {
+                // No result yet
+            }
+        }
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -143,46 +149,13 @@ fun RegisterScreen(
             Button(
                 onClick = {
                     usernameError = null; passwordError = null; emailError = null; mobileError = null
-                    var hasError = false
-                    if (username.isBlank()) {
-                        usernameError = "Không được bỏ trống username"
-                        hasError = true
-                    } else if (userList.any { it.idUser == username }) {
-                        usernameError = "Username đã tồn tại!"
-                        hasError = true
-                    }
-                    if (password.isBlank()) {
-                        passwordError = "Không được bỏ trống password"
-                        hasError = true
-                    } else if (password.length < 8) {
-                        passwordError = "Mật khẩu phải ≥ 8 ký tự"
-                        hasError = true
-                    }
-                    if (email.isBlank()) {
-                        emailError = "Không được bỏ trống email"
-                        hasError = true
-                    }
-                    if (mobile.isBlank()) {
-                        mobileError = "Không được bỏ trống số điện thoại"
-                        hasError = true
-                    }
-//                    else if (!mobile.startsWith("+")) {
-//                        mobileError = "Số điện thoại phải bao gồm mã quốc gia (ví dụ: +84)"
-//                        hasError = true
-//                    }
-
-                    if (!hasError) {
-                        val newUser = User(
-                            idUser = username,
-                            password = password,
-                            email = email,
-                            phoneNumber = mobile,
-                            profileName = username,
-                            userType = role
-                        )
-                        // Navigate to OTP verification instead of directly registering
-                        toOTPVerification(mobile, newUser)
-                    }
+                    viewModel.validateRegistration(
+                        username = username,
+                        password = password,
+                        email = email,
+                        mobile = mobile,
+                        role = role
+                    )
                 },
                 shape = CircleShape,
                 modifier = Modifier.size(50.dp)
@@ -191,10 +164,6 @@ fun RegisterScreen(
             }
         }
         Spacer(Modifier.height(16.dp))
-        if (regMessage.isNotBlank()) {
-            Text(regMessage, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-            Spacer(Modifier.height(16.dp))
-        }
         // Social login
         Spacer(Modifier.height(32.dp))
         Text(

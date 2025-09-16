@@ -4,5 +4,5 @@ data class Service(
     val idService: String = "",
     val name: String = "",
     val param: String = "",   // đơn vị sử dụng, ví dụ "kWh", "m³", "GB"
-    val fee: Double = 0.0     // đơn giá (có thể số lẻ)
+    val fee: Long = 0L     // đơn giá (có thể số lẻ)
 )

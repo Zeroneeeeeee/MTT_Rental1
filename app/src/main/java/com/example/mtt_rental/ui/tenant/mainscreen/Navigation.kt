@@ -23,25 +23,38 @@ import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.mtt_rental.Screen
+import com.example.mtt_rental.ui.tenant.DetailsScreen
+import com.example.mtt_rental.ui.tenant.RentScreen
 
 @Composable
-fun UserScreen(){
+fun UserScreen() {
     var selectedTab by remember { mutableIntStateOf(0) }
     val backStack = remember { mutableStateListOf<Screen>(Screen.HomeScreen) }
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f)) {
             NavDisplay(
-                backStack =backStack,
-                onBack = {backStack.removeLastOrNull()},
-                entryProvider = entryProvider{
-                    entry<Screen.HomeScreen>{
-                        HomeScreen()
+                backStack = backStack,
+                onBack = { backStack.removeLastOrNull() },
+                entryProvider = entryProvider {
+                    entry<Screen.HomeScreen> {
+                        HomeScreen(toDetail = {
+                            backStack.add(Screen.DetailScreen(it))
+                        })
                     }
-                    entry<Screen.ProfileScreen>{
+                    entry<Screen.ProfileScreen> {
                         ProfileScreen()
                     }
-                    entry<Screen.FavoriteScreen>{
+                    entry<Screen.FavoriteScreen> {
                         FavoriteScreen()
+                    }
+                    entry<Screen.DetailScreen> { (id) ->
+                        DetailsScreen(
+                            apartmentId = id,
+                            toRentScreen = { backStack.add(Screen.RentScreen(it)) }
+                        )
+                    }
+                    entry<Screen.RentScreen> { (id) ->
+                        RentScreen(idApartment = id)
                     }
                 }
             )
@@ -54,7 +67,8 @@ fun UserScreen(){
                 onClick = {
                     backStack.clear()
                     backStack.add(Screen.HomeScreen)
-                    selectedTab = 0 },
+                    selectedTab = 0
+                },
                 icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                 label = { Text("Home") }
             )
@@ -63,7 +77,8 @@ fun UserScreen(){
                 onClick = {
                     backStack.clear()
                     backStack.add(Screen.FavoriteScreen)
-                    selectedTab = 1 },
+                    selectedTab = 1
+                },
                 icon = {
                     Icon(
                         Icons.Default.Favorite,
@@ -77,7 +92,8 @@ fun UserScreen(){
                 onClick = {
                     backStack.clear()
                     backStack.add(Screen.ProfileScreen)
-                    selectedTab = 2 },
+                    selectedTab = 2
+                },
                 icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                 label = { Text("Profile") }
             )

@@ -1,9 +1,8 @@
 package com.example.mtt_rental.model
 
 data class Room(
-    val idRoom:String,
-    val idApartment:String,
-    val area:Long,
-    val maxRenter:Int,
-    val description:String,
+    val idRoom: String = "",
+    val idRoomType: String = "",
+    val name: String = "",
+    val floor: Int = 0
 )

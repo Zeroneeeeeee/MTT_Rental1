@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
@@ -15,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -29,12 +29,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mtt_rental.repo.UserRepo
-import com.example.mtt_rental.model.User
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mtt_rental.viewmodel.tenant.LoginResult
+import com.example.mtt_rental.viewmodel.tenant.LoginViewModel
 
 @Preview(showBackground = true)
 @Composable
@@ -45,23 +43,45 @@ fun LoginScreen(
 ) {
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var loginMessage by rememberSaveable { mutableStateOf("") }
     var usernameError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
-    val database = FirebaseDatabase.getInstance()
-    val userRef = database.getReference("users")
-    val userList = remember { mutableStateListOf<User>() }
-    LaunchedEffect(Unit) {
-        userRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                userList.clear()
-                for (userSnapshot in snapshot.children) {
-                    val user = userSnapshot.getValue(User::class.java)
-                    if (user != null) userList.add(user)
+
+    val viewModel: LoginViewModel = viewModel()
+    val isLoading by viewModel.isLoading
+    val loginResult by viewModel.loginResult
+
+    // Handle login result
+    LaunchedEffect(loginResult) {
+        val result = loginResult
+        when (result) {
+            is LoginResult.Success -> {
+                when (result.user.userType) {
+                    "User" -> toUserScreen()
+                    "Manager" -> toManagerScreen()
+                }
+                viewModel.clearLoginResult()
+            }
+            is LoginResult.Error -> {
+                // Handle specific field errors
+                when {
+                    result.message.contains("username") -> {
+                        usernameError = result.message
+                    }
+
+                    result.message.contains("password") -> {
+                        passwordError = result.message
+                    }
+
+                    else -> {
+                        usernameError = result.message
+                    }
                 }
             }
-            override fun onCancelled(error: DatabaseError) {}
-        })
+
+            null -> {
+                // No result yet
+            }
+        }
     }
     Column(
         modifier = Modifier
@@ -87,27 +107,33 @@ fun LoginScreen(
         Spacer(Modifier.height(30.dp))
         OutlinedTextField(
             value = username,
-            onValueChange = { username = it; usernameError = null },
+            onValueChange = {
+                username = it
+                usernameError = null
+                viewModel.clearLoginResult()
+            },
             label = { Text("Username") },
             isError = usernameError != null,
             supportingText = {
                 if (usernameError != null) Text(usernameError!!, color = Color.Red)
             },
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it; passwordError = null },
+            onValueChange = {
+                password = it
+                passwordError = null
+                viewModel.clearLoginResult()
+            },
             label = { Text("Password") },
             singleLine = true,
             isError = passwordError != null,
             supportingText = {
                 if (passwordError != null) Text(passwordError!!, color = Color.Red)
             },
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation()
         )
         Spacer(Modifier.height(6.dp))
@@ -122,48 +148,24 @@ fun LoginScreen(
         Spacer(Modifier.height(34.dp))
         Button(
             onClick = {
-                usernameError = null; passwordError = null
-                var hasError = false
-                if (username.isBlank()) {
-                    usernameError = "Không được bỏ trống username"
-                    hasError = true
-                } else if (userList.all { it.idUser != username }) {
-                    usernameError = "Username không tồn tại!"
-                    hasError = true
-                }
-                if (password.isBlank()) {
-                    passwordError = "Không được bỏ trống password"
-                    hasError = true
-                } else if (userList.any { it.idUser == username } && userList.first { it.idUser == username }.password != password) {
-                    passwordError = "Sai password!"
-                    hasError = true
-                }
-                loginMessage = if (hasError) "" else "Đăng nhập thành công!"
-                if (!hasError) {
-                    val user = userList.first { it.idUser == username }
-                    UserRepo.updateUser(user.idUser,user.profileName,user.email,user.phoneNumber,user.userType,user.address)
-                    when(userList.first { it.idUser == username }.userType){
-                        "User" -> toUserScreen()
-                        "Manager" -> toManagerScreen()
-                    }
-                }
+                usernameError = null
+                passwordError = null
+                viewModel.login(username, password)
             },
+            enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(15.dp)
         ) {
-            Text("Sign in", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        }
-        if (loginMessage.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                loginMessage,
-                modifier = Modifier.fillMaxWidth(),
-                color = if (loginMessage == "Đăng nhập thành công!") Color(0xFF00A65A)
-                else Color.Red,
-                textAlign = TextAlign.Center
-            )
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White
+                )
+            } else {
+                Text("Sign in", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
         }
         Spacer(Modifier.weight(1f))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

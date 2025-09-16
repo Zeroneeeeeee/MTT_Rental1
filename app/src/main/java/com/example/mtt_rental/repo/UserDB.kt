@@ -10,7 +10,10 @@ object UserDB {
     private val database = FirebaseDatabase.getInstance()
     private val userRef = database.getReference("users")
 
-    fun getUsers(onResult: (List<User>) -> Unit) {
+    fun getUsers(
+        onResult: (List<User>) -> Unit,
+        onError: (DatabaseError) -> Unit = {}
+    ) {
         userRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val users = mutableListOf<User>()
@@ -20,7 +23,9 @@ object UserDB {
                 }
                 onResult(users)
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                onError(error)
+            }
         })
     }
 

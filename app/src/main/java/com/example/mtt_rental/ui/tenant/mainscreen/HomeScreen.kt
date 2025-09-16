@@ -2,10 +2,10 @@ package com.example.mtt_rental.ui.tenant.mainscreen
 
 import android.R
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,17 +29,13 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,53 +47,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mtt_rental.model.Apartment
 import com.example.mtt_rental.repo.UserRepo
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.mtt_rental.viewmodel.tenant.HomeViewModel
 
 @Preview(showBackground = true)
 @Composable
-fun HomeScreen() {
-    val firebaseRef = FirebaseDatabase.getInstance().getReference("apartments")
-    val apartmentList = remember { mutableStateListOf<Apartment>() }
-    var searchQuery by remember { mutableStateOf("") }
+fun HomeScreen(viewModel: HomeViewModel = viewModel(), toDetail:(String) -> Unit ={}) {
+    val apartmentList by viewModel.apartmentList
+    val searchQuery by viewModel.searchQuery
+    val filteredApartmentList by viewModel.filteredApartmentList
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
 
-    // Filtered apartment list based on search query
-    val filteredApartmentList = remember(apartmentList, searchQuery) {
-        if (searchQuery.isEmpty()) {
-            apartmentList
-        } else {
-            apartmentList.filter { apartment ->
-                apartment.title.contains(searchQuery, ignoreCase = true) ||
-                        apartment.location.contains(searchQuery, ignoreCase = true) ||
-                        apartment.description.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        firebaseRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                apartmentList.clear() // Clear existing list to avoid duplicates
-                if (snapshot.exists()) {
-                    for (apartmentSnapshot in snapshot.children) {
-                        val empData = apartmentSnapshot.getValue(Apartment::class.java)
-                        if (empData != null) {
-                            apartmentList.add(empData)
-                        }
-                    }
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Handle error appropriately
-            }
-
-        })
-    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -120,7 +83,7 @@ fun HomeScreen() {
         // Search bar
         OutlinedTextField(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
+            onValueChange = { viewModel.updateSearchQuery(it) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
@@ -167,14 +130,36 @@ fun HomeScreen() {
             }
         }
         Spacer(Modifier.height(18.dp))
-        // Property List (filtered or all)
-        PropertyRowList(filteredApartmentList)
-        Spacer(Modifier.height(18.dp))
-        // Show nearby section only when not searching
-        if (searchQuery.isEmpty()) {
-            Text("Nearby your location", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-            Spacer(Modifier.height(12.dp))
-            ColumnItem()
+
+        // Show loading or content
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFFEFB8C8))
+            }
+        } else if (error != null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = error!!,
+                    color = Color.Red,
+                    fontSize = 16.sp
+                )
+            }
+        } else {
+            // Property List (filtered or all)
+            PropertyRowList(filteredApartmentList, onClick = { toDetail(it) })
+            Spacer(Modifier.height(18.dp))
+            // Show nearby section only when not searching
+            if (searchQuery.isEmpty()) {
+                Text("Nearby your location", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+                Spacer(Modifier.height(12.dp))
+                ColumnItem()
+            }
         }
     }
 }
@@ -195,10 +180,10 @@ fun InfoIconText(iconRes: Int, text: String, size: Int = 16) {
 }
 
 @Composable
-fun PropertyRowList(apartmentList: List<Apartment> = emptyList()) {
+fun PropertyRowList(apartmentList: List<Apartment> = emptyList(), onClick: (String) -> Unit = {}){
     LazyRow() {
         items(apartmentList) {
-            PropertyCard(apartment = it)
+            PropertyCard(apartment = it, onClick = { onClick(it.apartmentId) })
         }
     }
 }
@@ -208,12 +193,14 @@ fun PropertyCard(
     apartment: Apartment? = null,
     title: String = apartment?.title ?: "Title",
     cost: String = "${apartment?.price?.toString()}/month",
-    location: String = apartment?.location ?: "Location"
+    location: String = apartment?.location ?: "Location",
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .width(300.dp)
-            .padding(end = 16.dp),
+            .padding(end = 16.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(18.dp),
         elevation = CardDefaults.cardElevation(6.dp)
     ) {

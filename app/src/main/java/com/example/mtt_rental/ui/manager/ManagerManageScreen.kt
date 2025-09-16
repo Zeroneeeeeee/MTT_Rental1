@@ -1,6 +1,7 @@
 package com.example.mtt_rental.ui.manager
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,10 +29,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,12 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mtt_rental.repo.UserRepo
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mtt_rental.model.Apartment
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.mtt_rental.viewmodel.manager.ManagerManageViewModel
+import com.example.mtt_rental.viewmodel.manager.DeleteResult
 
 @Preview(showBackground = true)
 @Composable
@@ -55,31 +54,31 @@ fun ManagerManageScreen(
     toAddRenterScreen: () -> Unit = {},
     toEditScreen: (String) -> Unit = {},
     toDetailScreen: (String) -> Unit = {},
-    onDeleteProperty: (String) -> Unit = {}
+    onDeleteProperty: (String) -> Unit = {},
+    viewModel: ManagerManageViewModel = viewModel()
 ) {
-    val firebaseRef =
-        FirebaseDatabase.getInstance().getReference("apartments").orderByChild("ownerId")
-            .equalTo(UserRepo.idUser)
-    val apartmentList = remember { mutableStateListOf<Apartment>() }
-    LaunchedEffect(Unit) {
-        firebaseRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                apartmentList.clear() // Clear existing list to avoid duplicates
-                if (snapshot.exists()) {
-                    for (apartmentSnapshot in snapshot.children) {
-                        val empData = apartmentSnapshot.getValue(Apartment::class.java)
-                        if (empData != null) {
-                            apartmentList.add(empData)
-                        }
-                    }
-                }
+    val apartmentList by viewModel.apartmentList
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
+    val deleteResult by viewModel.deleteResult
+
+    // Handle delete result
+    LaunchedEffect(deleteResult) {
+        val result = deleteResult
+        when (result) {
+            is DeleteResult.Success -> {
+                // Show success message or handle success
+                viewModel.clearDeleteResult()
+            }
+            is DeleteResult.Error -> {
+                // Show error message
+                viewModel.clearDeleteResult()
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                // Handle error appropriately
+            null -> {
+                // No result yet
             }
-
-        })
+        }
     }
 
     Scaffold(
@@ -105,23 +104,44 @@ fun ManagerManageScreen(
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(apartmentList) { property ->
-                    PropertyCard(
-                        property = property,
-                        toEditScreen = toEditScreen,
-                        toDetailScreen = toDetailScreen,
-                        onDeleteProperty = { apartmentId ->
-                            // Call the delete function passed from parent
-                            onDeleteProperty(apartmentId)
-                            // Or implement direct Firebase deletion here:
-                            // FirebaseDatabase.getInstance().getReference("apartments")
-                            //     .child(apartmentId).removeValue()
-                            // apartmentList.removeAll { it.apartmentId == apartmentId }
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFFEFB8C8))
+                    }
+                }
+
+                error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = error!!,
+                            color = Color.Red,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(apartmentList) { property ->
+                            PropertyCard(
+                                property = property,
+                                toEditScreen = toEditScreen,
+                                toDetailScreen = toDetailScreen,
+                                onDeleteProperty = { apartmentId ->
+                                    viewModel.deleteApartment(apartmentId)
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
@@ -167,7 +187,7 @@ fun PropertyCard(
                 )
 
                 Text(
-                    text = "${property.price}/month",
+                    text = "Owned by ${property.ownerId}",
                     color = Color(0xFF4CAF50),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium

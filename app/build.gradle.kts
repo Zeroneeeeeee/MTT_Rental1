@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.firebase.database)
     implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui.android)
     testImplementation(libs.junit)
