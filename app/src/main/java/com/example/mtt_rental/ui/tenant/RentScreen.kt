@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -39,10 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mtt_rental.dtmodel.RoomTypeVM
 import com.example.mtt_rental.dtmodel.RoomVM
-import com.example.mtt_rental.repo.UserDB
-import com.example.mtt_rental.repo.UserRepo
-import com.example.mtt_rental.utils.toRoomTypeVMList
-import com.example.mtt_rental.utils.toRoomVMList
+import com.example.mtt_rental.utils.UserRepo
 import com.example.mtt_rental.viewmodel.tenant.RentViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,48 +46,51 @@ import com.example.mtt_rental.viewmodel.tenant.RentViewModel
 @Composable
 fun RentScreen(
     viewModel: RentViewModel = viewModel(),
-    idApartment:String=""
+    idApartment: String = "",
+    toHome: () -> Unit = {}
 ) {
     var items by remember { mutableStateOf(emptyList<RoomTypeVM>()) }
     var selectedItem by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         Log.d("RentScreen", "RentScreen: Loading room types for apartment $idApartment")
-        viewModel.loadRoomTypesAndRooms(idApartment){items = it}
+        viewModel.loadRoomTypesAndRooms(idApartment) { items = it }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chọn phòng") }
+                title = { Text("Select Room") }
             )
         },
         bottomBar = {
             Button(
                 onClick = {
                     if (selectedItem != null) {
-                        println("Bạn đã chọn: $selectedItem")
+                        println("You selected: $selectedItem")
+                        viewModel.createContract(
+                            idUser = UserRepo.idUser,
+                            idRoom = selectedItem ?: "",
+                            status = "Pending",
+                            startTime = System.currentTimeMillis(),
+                            endTime = 0L
+                        )
+                        toHome()
                     } else {
-                        println("Chưa chọn phòng nào")
+                        println("No room selected")
                     }
-                    viewModel.createContract(
-                        idUser = UserRepo.idUser,
-                        idRoom = selectedItem?:"",
-                        status = "Pending",
-                        startTime = System.currentTimeMillis(),
-                        endTime = 0L
-                    )
+
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("Xác nhận lựa chọn")
+                Text("Confirm Selection")
             }
         }
     ) { paddingValues ->
         LazyColumn(contentPadding = paddingValues) {
-            item{
+            item {
                 RoomTypeList(
                     list = items,
                     roomClick = { id ->
@@ -101,7 +100,6 @@ fun RentScreen(
                 )
             }
         }
-
     }
 }
 
@@ -115,7 +113,7 @@ fun RoomTypeList(
         list.forEach { roomType ->
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Loại phòng: ${roomType.idRoomType}",
+                    text = "Room Type: ${roomType.idRoomType}",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(8.dp)
                 )
@@ -129,7 +127,6 @@ fun RoomTypeList(
         }
     }
 }
-
 
 @Composable
 private fun RoomList(
@@ -145,7 +142,7 @@ private fun RoomList(
         items(roomList) { item ->
             Card(
                 modifier = Modifier
-                    .width(200.dp) // 👈 mỗi card có độ rộng vừa phải
+                    .width(200.dp)
                     .clickable { itemClick(item.idRoom) },
                 colors = CardDefaults.cardColors(
                     containerColor = if (isSelected(item.idRoom)) Color(0xFFB3E5FC) else Color.White

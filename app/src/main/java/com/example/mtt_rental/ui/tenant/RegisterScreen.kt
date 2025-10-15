@@ -59,7 +59,6 @@ fun RegisterScreen(
     var emailError by remember { mutableStateOf<String?>(null) }
     var mobileError by remember { mutableStateOf<String?>(null) }
 
-    val isLoading by viewModel.isLoading
     val validationResult by viewModel.validationResult
 
     // Handle validation result
@@ -145,7 +144,7 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Create", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
             Button(
                 onClick = {
                     usernameError = null; passwordError = null; emailError = null; mobileError = null
@@ -157,38 +156,22 @@ fun RegisterScreen(
                         role = role
                     )
                 },
-                shape = CircleShape,
-                modifier = Modifier.size(50.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
             ) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "Go")
+                Text("Create", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.weight(1f))
         // Social login
-        Spacer(Modifier.height(32.dp))
-        Text(
-            "Or create account using social media",
-            fontSize = 15.sp,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(24.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            SocialButtonCircle(iconRes = R.drawable.ic_menu_share) // fake facebook
-            Spacer(Modifier.width(16.dp))
-            SocialButtonCircle(iconRes = R.drawable.ic_menu_send) // fake twitter
-            Spacer(Modifier.width(16.dp))
-            SocialButtonCircle(iconRes = R.drawable.ic_input_add) // fake google
-        }
-        Spacer(Modifier.height(32.dp))
-        TextButton(
-            onClick = toLogin,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text("Already have an account? Login")
+        Row(modifier = Modifier.align(Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically){
+            Text("Already have an account?")
+            TextButton(
+                onClick = toLogin,
+            ) {
+                Text("Login", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -222,25 +205,6 @@ private fun InputFieldRoundedWithIcon(
             autoCorrectEnabled = false
         )
     )
-}
-
-@Composable
-private fun SocialButtonCircle(iconRes: Int) {
-    Button(
-        onClick = {},
-        shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-        modifier = Modifier.size(48.dp),
-        contentPadding = PaddingValues(0.dp),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-    ) {
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = null,
-            tint = Color.Unspecified,
-            modifier = Modifier.size(28.dp)
-        )
-    }
 }
 
 @Composable

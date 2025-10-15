@@ -1,10 +1,10 @@
 package com.example.mtt_rental.viewmodel.tenant
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.mtt_rental.model.User
-import com.example.mtt_rental.repo.UserDB
+import com.example.mtt_rental.viewmodel.repo.UserDB
 
 class RegisterViewModel : ViewModel() {
 
@@ -63,6 +63,8 @@ class RegisterViewModel : ViewModel() {
 
         if (email.isBlank()) {
             errors["email"] = "Không được bỏ trống email"
+        } else if (!email.endsWith("@gmail.com")) {
+            errors["email"] = "Email must end with @gmail.com"
         }
 
         if (mobile.isBlank()) {

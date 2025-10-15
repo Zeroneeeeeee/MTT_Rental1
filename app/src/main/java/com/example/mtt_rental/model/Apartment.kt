@@ -6,9 +6,6 @@ data class Apartment(
     val description:String = "",
     val location:String = "",
     val ownerId:String = "",
-    val price:Int=0,
     val image:String = "",
-    val maxRenter: Int=0,
-    val area: Double = 0.0,
     val rating: Double = 0.0,
 )

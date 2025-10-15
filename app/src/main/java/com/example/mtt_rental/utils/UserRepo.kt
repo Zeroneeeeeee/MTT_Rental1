@@ -1,7 +1,9 @@
-package com.example.mtt_rental.repo
+package com.example.mtt_rental.utils
 
 import androidx.compose.runtime.mutableStateListOf
 import com.example.mtt_rental.model.Apartment
+import com.example.mtt_rental.viewmodel.repo.ApartmentDB
+import com.example.mtt_rental.viewmodel.repo.UserDB
 
 object UserRepo {
     var idUser: String = ""
@@ -26,8 +28,16 @@ object UserRepo {
         this.phoneNumber = phoneNumber
         this.userType = userType
         this.address = address
-
         loadUserFavorites()
+    }
+
+    fun clearUser(){
+        this.idUser = ""
+        this.profileName = ""
+        this.email = ""
+        this.phoneNumber = ""
+        this.userType = ""
+        this.address = ""
     }
 
     private fun loadUserFavorites() {

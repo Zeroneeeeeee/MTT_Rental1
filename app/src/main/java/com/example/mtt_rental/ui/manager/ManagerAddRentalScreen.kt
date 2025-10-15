@@ -1,17 +1,23 @@
 package com.example.mtt_rental.ui.manager
 
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,43 +35,53 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.mtt_rental.dtmodel.RoomTypeVM
 import com.example.mtt_rental.viewmodel.manager.ManagerAddRentalViewModel
 import com.example.mtt_rental.viewmodel.manager.SaveResult
 
-
-@Preview(showBackground = true)
 @Composable
 fun ManagerAddRentalScreen(
     editApartmentId: String = "",
-    roomTypeList:List<RoomTypeVM> = emptyList(),
+    roomTypeList: List<RoomTypeVM> = emptyList(),
     toAddRoomScreen: () -> Unit = {},
+    toEditRoomScreen: (String,String) -> Unit = {_,_ ->},
     toManageScreen: () -> Unit = {},
     viewModel: ManagerAddRentalViewModel = viewModel()
 ) {
-
     val context = LocalContext.current
     var location by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
-    var image by remember { mutableStateOf("") }
+    var imageUris by remember { mutableStateOf<List<Uri>>(emptyList()) } // nhiều ảnh
 
     val isLoading by viewModel.isLoading
     val saveResult by viewModel.saveResult
+
+    // Gallery multiple picker
+    val pickImagesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        imageUris = uris
+    }
 
     // Handle save result
     LaunchedEffect(saveResult) {
         val result = saveResult
         when (result) {
             is SaveResult.Success -> {
-                // If the success is from saving the apartment, proceed to save room types
-                if (result.message == "Apartment đã được lưu thành công") {
+                if (result.message == "Apartment has been saved successfully") {
                     roomTypeList.forEach { roomType ->
+                        Log.d("ManagerAddRentalVM", "saveRoomType")
                         viewModel.saveRoomType(
-                            name = roomType.idRoomType,
+                            idRoomType = roomType.idRoomType,
                             maxRenter = roomType.maxRenter,
                             price = roomType.price,
                             area = roomType.area,
@@ -83,25 +99,20 @@ fun ManagerAddRentalScreen(
                                 idRoomType = roomType.idRoomType,
                                 name = roomService.name,
                                 fee = roomService.fee,
-                                param = roomService.unit
+                                unit = roomService.unit
                             )
                         }
                     }
-                    // After saving everything, navigate away
                     toManageScreen()
                 }
                 Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
                 viewModel.clearSaveResult()
             }
-
             is SaveResult.Error -> {
                 Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
                 viewModel.clearSaveResult()
             }
-
-            null -> {
-                // No result yet
-            }
+            null -> {}
         }
     }
 
@@ -110,50 +121,81 @@ fun ManagerAddRentalScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(24.dp)
         ) {
             item {
+                Text("Add Rental", fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Location
+                Text("Location", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
                     label = { Text("Location") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(8.dp))
 
+                // Title
+                Text("Title", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text("Title") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = image,
-                    onValueChange = { image = it },
-                    label = { Text("Image") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                )
+                // Multiple Images
+                Text("Images", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = { pickImagesLauncher.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Pick Images from Gallery")
+                }
+
+                // Show image previews
+                if (imageUris.isNotEmpty()) {
+                    LazyRow(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(imageUris.size) { index ->
+                            AsyncImage(
+                                model = imageUris[index],
+                                contentDescription = "Apartment Image",
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .clip(RoundedCornerShape(12.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
             }
+
+            // Room type
             item {
-                RoomTypeList(listRoomType = roomTypeList, onAddRoom = toAddRoomScreen)
+                Text("Room Type", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                RoomTypeList(listRoomType = roomTypeList, onAddRoom = toAddRoomScreen, onClick = {toEditRoomScreen(editApartmentId,it)})//
+                Spacer(modifier = Modifier.height(8.dp))
             }
+
+            // Save button
             item {
                 Button(
                     onClick = {
-                        // Only call saveApartment here, the LaunchedEffect will handle the rest
+                        // Lưu danh sách ảnh dưới dạng chuỗi URI ngăn cách nhau
                         viewModel.saveApartment(
                             editApartmentId = editApartmentId,
                             location = location,
                             title = title,
-                            image = image
+                            image = imageUris.joinToString(",") { it.toString() }
                         )
                     },
                     enabled = !isLoading,
@@ -175,7 +217,7 @@ fun ManagerAddRentalScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun RoomTypeList(listRoomType:List<RoomTypeVM> = emptyList(), onClick: () -> Unit = {}, onAddRoom: () -> Unit = {}) {
+fun RoomTypeList(listRoomType:List<RoomTypeVM> = emptyList(), onClick: (String) -> Unit = {}, onAddRoom: () -> Unit = {}) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -183,7 +225,7 @@ fun RoomTypeList(listRoomType:List<RoomTypeVM> = emptyList(), onClick: () -> Uni
         listRoomType.forEach { roomType ->
             RoomTag(
                 name = roomType.idRoomType,
-                onClick = { onClick() }
+                onClick = { onClick(roomType.idRoomType) }
             )
         }
 

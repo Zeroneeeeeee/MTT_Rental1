@@ -4,12 +4,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import com.example.mtt_rental.model.Apartment
-import com.example.mtt_rental.repo.ApartmentRepository
+import com.example.mtt_rental.model.Review
+import com.example.mtt_rental.viewmodel.repo.ApartmentRepository
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class HomeViewModel : ViewModel() {
+    private val database = FirebaseDatabase.getInstance()
+    private val reviewsRef = database.getReference("reviews")
 
     private val _apartmentList = mutableStateOf<List<Apartment>>(emptyList())
     val apartmentList: State<List<Apartment>> = _apartmentList
+
+    private val _ratings = mutableStateOf<Map<String, Double>>(emptyMap())
+    val ratings: State<Map<String, Double>> = _ratings
 
     private val _searchQuery = mutableStateOf("")
     val searchQuery: State<String> = _searchQuery
@@ -34,6 +44,15 @@ class HomeViewModel : ViewModel() {
                 _apartmentList.value = apartments
                 updateFilteredList()
                 _isLoading.value = false
+
+                // Tải rating trung bình cho từng apartment
+                apartments.forEach { apt ->
+                    loadAverageRating(apt.apartmentId){
+                        _ratings.value = _ratings.value.toMutableMap().apply {
+                            put(apt.apartmentId, it)
+                        }
+                    }
+                }
             },
             onError = { error ->
                 _error.value = "Lỗi tải dữ liệu: ${error.message}"
@@ -64,5 +83,31 @@ class HomeViewModel : ViewModel() {
 
     fun clearError() {
         _error.value = null
+    }
+
+    // --- Hàm gộp từ ReviewRepository ---
+    fun loadAverageRating(apartmentId: String, onResult: (Double) -> Unit) {
+        reviewsRef.child("user")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val ratings = mutableListOf<Double>()
+                    for (child in snapshot.children) {
+                        val review = child.getValue(Review::class.java)
+                        if (review != null && review.idApartment == apartmentId) {
+                            ratings.add(review.rating?:0.0)
+                        }
+                    }
+
+                    val avg = if (ratings.isNotEmpty()) {
+                        ratings.average()
+                    } else 0.0
+
+                    onResult(avg)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    onResult(0.0)
+                }
+            })
     }
 }

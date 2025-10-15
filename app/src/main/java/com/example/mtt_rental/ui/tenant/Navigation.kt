@@ -62,10 +62,16 @@ fun AppScreen() {
                 )
             }
             entry(Screen.MainScreen){
-                UserScreen()
+                UserScreen(toLogin = {
+                    backStack.clear()
+                    backStack.add(Screen.LoginScreen)
+                })
             }
             entry(Screen.ManagerMainScreen) {
-                ManagerScreen()
+                ManagerScreen(toLogin = {
+                    backStack.clear()
+                    backStack.add(Screen.LoginScreen)
+                })
             }
 
         }

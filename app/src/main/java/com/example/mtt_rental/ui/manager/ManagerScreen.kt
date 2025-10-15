@@ -28,13 +28,11 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.mtt_rental.Screen
 import com.example.mtt_rental.dtmodel.RoomTypeVM
 import com.example.mtt_rental.ui.tenant.DetailsScreen
-import com.example.mtt_rental.utils.toRoomTypeVM
-import com.example.mtt_rental.utils.toRoomVM
 import com.example.mtt_rental.viewmodel.manager.ManagerScreenViewModel
 
 @Preview(showBackground = true)
 @Composable
-fun ManagerScreen(viewModel: ManagerScreenViewModel = viewModel()) {
+fun ManagerScreen(viewModel: ManagerScreenViewModel = viewModel(), toLogin: () -> Unit = {}){
     var selectedTab by remember { mutableIntStateOf(0) }
     val roomTypeList = remember { mutableStateListOf<RoomTypeVM>() }
     val backStack = remember { mutableStateListOf<Screen>(Screen.ManagerDashboardScreen) }
@@ -46,7 +44,13 @@ fun ManagerScreen(viewModel: ManagerScreenViewModel = viewModel()) {
                 onBack = { backStack.removeLastOrNull() },
                 entryProvider = entryProvider {
                     entry<Screen.ManagerDashboardScreen> {
-                        ManagerDashboardScreen()
+                        ManagerDashboardScreen(onFeedbackClick = {
+                            backStack.add(
+                                Screen.ReplyScreen(
+                                    it
+                                )
+                            )
+                        })
                     }
                     entry<Screen.ManagerManageScreen> {
                         ManagerManageScreen(
@@ -59,13 +63,16 @@ fun ManagerScreen(viewModel: ManagerScreenViewModel = viewModel()) {
                                     backStack.add(Screen.ManagerAddApartmentScreen(apartmentId))
                                 }
                             },
+                            toRoomManagementScreen = {
+                                backStack.add(Screen.RoomManageScreen(it))
+                            },
                             toDetailScreen = { apartmentId ->
                                 backStack.add(Screen.DetailScreen(apartmentId))
                             }
                         )
                     }
                     entry<Screen.ManagerProfileScreen> {
-                        ManagerProfileScreen()
+                        ManagerProfileScreen(toLogin = toLogin)
                     }
                     entry<Screen.ManagerAddApartmentScreen> { screen ->
                         ManagerAddRentalScreen(
@@ -76,19 +83,38 @@ fun ManagerScreen(viewModel: ManagerScreenViewModel = viewModel()) {
                                 backStack.add(Screen.ManagerManageScreen)
                                 roomTypeList.clear()
                             },
-                            toAddRoomScreen = { backStack.add(Screen.AddRoomScreen(screen.updateId)) }
+                            toAddRoomScreen = { backStack.add(Screen.AddRoomScreen(screen.updateId)) },
+                            toEditRoomScreen = {  apartmentId, roomTypeId ->
+                                backStack.add(Screen.EditRoomScreen(apartmentId, roomTypeId))
+                            }
                         )
                     }
                     entry<Screen.DetailScreen> { (id) ->
                         DetailsScreen(id)
                     }
-                    entry<Screen.AddRoomScreen> { (id)->
+                    entry<Screen.AddRoomScreen> { (id) ->
                         AddRoomScreen(
                             onAddRoomTypeEvent = {
                                 roomTypeList.add(it)
                                 backStack.add(Screen.ManagerAddApartmentScreen(id))//
                             }
                         )
+                    }
+                    entry<Screen.RoomManageScreen> { (id) ->
+                        RoomManagementScreen(
+                            apartmentId = id,
+                            toPaymentScreen = { apartmentId, roomId ->
+                                backStack.add(Screen.PaymentScreen(apartmentId, roomId))
+                            })
+                    }
+                    entry<Screen.PaymentScreen> { (apartmentId, roomTypeId) ->
+                        PaymentScreen(idApartment = apartmentId, idRoomType = roomTypeId)
+                    }
+                    entry<Screen.ReplyScreen> { (feedbackId) ->
+                        FeedbackReplyScreen(feedbackId)
+                    }
+                    entry<Screen.EditRoomScreen> { (apartmentId, roomTypeId) ->
+                        AddRoomScreen(idRoomType = roomTypeId, idApartment = apartmentId)
                     }
                 }
             )

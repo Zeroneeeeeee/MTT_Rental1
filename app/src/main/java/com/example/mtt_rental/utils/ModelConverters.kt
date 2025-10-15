@@ -13,7 +13,8 @@ fun Room.toRoomVM(): RoomVM {
     return RoomVM(
         idRoom = this.idRoom,
         name = this.name,
-        floor = this.floor
+        floor = this.floor,
+        idRoomType = this.idRoomType
     )
 }
 
@@ -67,9 +68,6 @@ fun Apartment.toApartmentVM(roomTypeList: List<RoomTypeVM> = emptyList()): Apart
 
 fun ApartmentVM.toApartment(
     description: String = "",
-    price: Int = 0,
-    maxRenter: Int = 0,
-    area: Double = 0.0,
     rating: Double = 0.0
 ): Apartment {
     return Apartment(
@@ -78,11 +76,7 @@ fun ApartmentVM.toApartment(
         description = description,
         location = this.location,
         ownerId = this.ownerId,
-        price = price,
-        image = this.image,
-        maxRenter = maxRenter,
-        area = area,
-        rating = rating
+        image = this.image
     )
 }
 

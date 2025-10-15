@@ -32,9 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mtt_rental.dtmodel.RoomServiceVM
 import com.example.mtt_rental.dtmodel.RoomTypeVM
@@ -51,6 +53,8 @@ fun Preview(modifier: Modifier = Modifier) {
 @Composable
 fun AddRoomScreen(
     modifier: Modifier = Modifier,
+    idRoomType: String = "",
+    idApartment: String = "",
     onAddRoomTypeEvent: (RoomTypeVM) -> Unit = {},
     viewModel: AddRoomViewModel = viewModel()
 ) {
@@ -67,11 +71,16 @@ fun AddRoomScreen(
     var electric by remember { mutableStateOf("") }
     var water by remember { mutableStateOf("") }
     var service by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
     var area by remember { mutableStateOf("") }
     var maxPeople by remember { mutableStateOf("") }
 
     val isLoading by viewModel.isLoading
     val saveResult by viewModel.saveResult
+
+    LaunchedEffect(Unit){
+        viewModel.loadRoomsByRoomType(idApartment, idRoomType)
+    }
 
     LaunchedEffect(saveResult) {
         val result = saveResult
@@ -102,20 +111,24 @@ fun AddRoomScreen(
                 .fillMaxSize()
                 .padding(24.dp),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
+                Text("Rooms", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 RoomList(listRoom = roomList,onAddRoom = { showAddDialog = true })
+                Spacer(modifier = Modifier.height(16.dp))
             }
             item {
+                Text("Room's type name", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Room Name") },
+                    label = { Text("Room's type name") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Area", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
                     value = area,
                     onValueChange = { area = it },
@@ -125,6 +138,8 @@ fun AddRoomScreen(
                         .padding(vertical = 4.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Max people", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
                     value = maxPeople,
                     onValueChange = { maxPeople = it },
@@ -134,9 +149,10 @@ fun AddRoomScreen(
                         .padding(vertical = 4.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
             }
             item {
-                Text("Cost")
+                Text("Rental", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
                     value = rental,
                     onValueChange = { rental = it },
@@ -146,6 +162,8 @@ fun AddRoomScreen(
                         .padding(vertical = 4.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Electric", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
                     value = electric,
                     onValueChange = { electric = it },
@@ -155,6 +173,8 @@ fun AddRoomScreen(
                         .padding(vertical = 4.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Water", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
                     value = water,
                     onValueChange = { water = it },
@@ -164,6 +184,8 @@ fun AddRoomScreen(
                         .padding(vertical = 4.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Service", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
                     value = service,
                     onValueChange = { service = it },
@@ -173,40 +195,54 @@ fun AddRoomScreen(
                         .padding(vertical = 4.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+                Text("Description", fontSize = 16.sp,fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
             item {
                 Button(
                     onClick = {
-                        val electric = RoomServiceVM(
-                            idRoomService = "Electricity",
-                            name = "Electricity",
-                            fee = electric.toLong(),
-                            unit = "kWh"
-                        )
-                        val water = RoomServiceVM(
-                            idRoomService = "Water",
-                            name = "Water",
-                            fee = water.toLong(),
-                            unit = "m3"
-                        )
-                        val serviceFee = RoomServiceVM(
-                            idRoomService = "Service",
-                            name = "Service",
-                            fee = service.toLong(),
-                            unit = "Month"
-                        )
-                        val serviceList = mutableListOf(electric, water, serviceFee)
-                        val newRoomType = RoomTypeVM(
-                            idRoomType = name.replace(" ", "_"),
-                            price = rental.toLong(),
-                            area = area.toLong(),
-                            maxRenter = maxPeople.toInt(),
-                            description = "",
-                            roomList = roomList,
-                            roomServiceList = serviceList
-                        )
-                        onAddRoomTypeEvent(newRoomType)
-
+                        if(idRoomType==""){
+                            val electric = RoomServiceVM(
+                                idRoomService = "Electricity",
+                                name = "Electricity",
+                                fee = electric.toLong(),
+                                unit = "kWh"
+                            )
+                            val water = RoomServiceVM(
+                                idRoomService = "Water",
+                                name = "Water",
+                                fee = water.toLong(),
+                                unit = "m3"
+                            )
+                            val serviceFee = RoomServiceVM(
+                                idRoomService = "Service",
+                                name = "Service",
+                                fee = service.toLong(),
+                                unit = "Month"
+                            )
+                            val serviceList = mutableListOf(electric, water, serviceFee)
+                            val newRoomType = RoomTypeVM(
+                                idRoomType = name.replace(" ", "_"),
+                                price = rental.toLong(),
+                                area = area.toLong(),
+                                maxRenter = maxPeople.toLongOrNull() ?: 0L,
+                                description = description,
+                                roomList = roomList,
+                                roomServiceList = serviceList
+                            )
+                            onAddRoomTypeEvent(newRoomType)
+                        }
+                        else{
+                            viewModel.saveRoomType(idRoomType,idApartment, maxRenter = maxPeople.toLongOrNull() ?: 0L,price = rental.toLongOrNull()?:0L,area = area.toLongOrNull()?:0L, description = description)
+                        }
                     },
                     enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth()
@@ -258,13 +294,15 @@ fun AddRoomScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            roomList.add(
-                                RoomVM(
-                                    name = roomNumber,
-                                    floor = floor
+                            if(idRoomType ==""){
+                                roomList.add(
+                                    RoomVM(
+                                        name = roomNumber,
+                                        floor = floor
+                                    )
                                 )
-                            )
-                            showAddDialog = false
+                                showAddDialog = false
+                            }
                         },
                         enabled = !isLoading
                     ) {

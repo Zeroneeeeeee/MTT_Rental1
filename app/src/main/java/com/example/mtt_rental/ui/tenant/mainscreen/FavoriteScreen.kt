@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.mtt_rental.repo.UserRepo
+import com.example.mtt_rental.utils.UserRepo
 import com.example.mtt_rental.model.Apartment
 
 @Preview(showBackground = true)
@@ -87,7 +87,7 @@ fun FavoriteScreen() {
                     FavoriteHouseCard(
                         apartment = apartment,
                         title = apartment.title,
-                        price = "${apartment.price}/month",
+                        price = "3500000/month", //Can Sua
                         address = apartment.location,
                         imageRes = R.drawable.ic_menu_gallery,
                         rating = apartment.rating.toString()
@@ -113,7 +113,7 @@ fun FavoriteHouseCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.background(Color.White).padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(

@@ -4,8 +4,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import com.example.mtt_rental.model.User
-import com.example.mtt_rental.repo.UserDB
-import com.example.mtt_rental.repo.UserRepo
+import com.example.mtt_rental.viewmodel.repo.UserDB
+import com.example.mtt_rental.utils.UserRepo
 
 class LoginViewModel : ViewModel() {
 

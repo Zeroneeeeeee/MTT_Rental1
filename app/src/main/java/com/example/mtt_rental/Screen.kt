@@ -13,15 +13,19 @@ sealed interface Screen {
     data class RentScreen(val id: String) : Screen
 
     data class DetailScreen(val id: String) : Screen
+    data class ReviewScreen(val id: String) : Screen
+    data class FeedbackScreen(val id: String) : Screen
+    data class AddFeedbackScreen(val id: String) : Screen
 
     // Manager screens
     data object ManagerMainScreen : Screen
     data object ManagerDashboardScreen : Screen
     data object ManagerManageScreen : Screen
     data object ManagerProfileScreen : Screen
-    data class ManagerAddApartmentScreen(
-        val updateId: String = ""
-    ) : Screen
-
+    data class ManagerAddApartmentScreen(val updateId: String = "") : Screen
+    data class RoomManageScreen(val id: String) : Screen
+    data class PaymentScreen(val apartmentId: String, val roomId: String): Screen
+    data class ReplyScreen(val id: String) : Screen
     data class AddRoomScreen(val id: String) : Screen
+    data class EditRoomScreen(val idApartment: String, val idRoomType: String) : Screen
 }

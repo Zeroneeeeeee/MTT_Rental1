@@ -54,6 +54,7 @@ fun ManagerManageScreen(
     toAddRenterScreen: () -> Unit = {},
     toEditScreen: (String) -> Unit = {},
     toDetailScreen: (String) -> Unit = {},
+    toRoomManagementScreen: (String) -> Unit = {},
     onDeleteProperty: (String) -> Unit = {},
     viewModel: ManagerManageViewModel = viewModel()
 ) {
@@ -136,6 +137,7 @@ fun ManagerManageScreen(
                                 property = property,
                                 toEditScreen = toEditScreen,
                                 toDetailScreen = toDetailScreen,
+                                toRoomManagementScreen = toRoomManagementScreen,
                                 onDeleteProperty = { apartmentId ->
                                     viewModel.deleteApartment(apartmentId)
                                 }
@@ -153,6 +155,7 @@ fun PropertyCard(
     property: Apartment,
     toEditScreen: (String) -> Unit = {},
     toDetailScreen: (String) -> Unit = {},
+    toRoomManagementScreen: (String) -> Unit = {},
     onDeleteProperty: (String) -> Unit = {}
 ) {
     Card(
@@ -231,7 +234,7 @@ fun PropertyCard(
                         text = { Text("Manage") },
                         onClick = {
                             expanded = false
-                            toDetailScreen(property.apartmentId)
+                            toRoomManagementScreen(property.apartmentId)
                         },
                         leadingIcon = {
                             Icon(

@@ -1,4 +1,4 @@
-package com.example.mtt_rental.repo
+package com.example.mtt_rental.viewmodel.repo
 
 import android.app.Activity
 import com.example.mtt_rental.model.User

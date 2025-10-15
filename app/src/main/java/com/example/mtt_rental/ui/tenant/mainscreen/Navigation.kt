@@ -1,5 +1,6 @@
 package com.example.mtt_rental.ui.tenant.mainscreen
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,10 +25,13 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.mtt_rental.Screen
 import com.example.mtt_rental.ui.tenant.DetailsScreen
+import com.example.mtt_rental.ui.tenant.FeedbackListScreen
+import com.example.mtt_rental.ui.tenant.FeedbackScreen
 import com.example.mtt_rental.ui.tenant.RentScreen
+import com.example.mtt_rental.ui.tenant.SendReviewScreen
 
 @Composable
-fun UserScreen() {
+fun UserScreen(toLogin: () -> Unit = {}) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val backStack = remember { mutableStateListOf<Screen>(Screen.HomeScreen) }
     Column(modifier = Modifier.fillMaxSize()) {
@@ -42,7 +46,11 @@ fun UserScreen() {
                         })
                     }
                     entry<Screen.ProfileScreen> {
-                        ProfileScreen()
+                        ProfileScreen(
+                            toReviewScreen = { backStack.add(Screen.ReviewScreen(it)) },
+                            toFeedbackScreen = { backStack.add(Screen.FeedbackScreen(it)) },
+                            toLogin = toLogin
+                        )
                     }
                     entry<Screen.FavoriteScreen> {
                         FavoriteScreen()
@@ -54,7 +62,28 @@ fun UserScreen() {
                         )
                     }
                     entry<Screen.RentScreen> { (id) ->
-                        RentScreen(idApartment = id)
+                        RentScreen(idApartment = id, toHome = { backStack.add(Screen.HomeScreen) })
+                    }
+                    entry<Screen.ReviewScreen> { (apartmentId) ->
+                        SendReviewScreen(apartmentId)
+                    }
+                    entry<Screen.FeedbackScreen> { (managerId) ->
+                        Log.d("TAG", "UserScreen: $managerId")
+                        FeedbackListScreen(onAddFeedback = {
+                            backStack.add(
+                                Screen.AddFeedbackScreen(
+                                    managerId
+                                )
+                            )
+                        })
+                    }
+                    entry<Screen.AddFeedbackScreen> { (receiverId) ->
+                        FeedbackScreen(
+                            managerId = receiverId,
+                            toProfileScreen = {
+                            backStack.clear()
+                            backStack.add(Screen.ProfileScreen)
+                        })
                     }
                 }
             )

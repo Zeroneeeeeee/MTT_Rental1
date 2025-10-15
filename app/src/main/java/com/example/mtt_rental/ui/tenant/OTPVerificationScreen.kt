@@ -101,7 +101,7 @@ fun OTPVerificationScreen(
 
         // Title
         Text(
-            text = "Xác thực OTP",
+            text = "OTP Verification",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -111,7 +111,7 @@ fun OTPVerificationScreen(
 
         // Description
         Text(
-            text = "Nhập mã OTP được gửi đến số điện thoại",
+            text = "Enter the OTP code sent to your phone number",
             fontSize = 16.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
@@ -152,7 +152,7 @@ fun OTPVerificationScreen(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Xác thực OTP", fontSize = 18.sp)
+                Text("Verify OTP", fontSize = 18.sp)
             }
         }
 
@@ -167,11 +167,11 @@ fun OTPVerificationScreen(
                     viewModel.sendOTP(phoneNumber, context as Activity)
                 }
             ) {
-                Text("Gửi lại mã OTP")
+                Text("Resend OTP")
             }
         } else {
             Text(
-                text = "Gửi lại mã sau ${resendCountdown}s",
+                text = "Resend code in ${resendCountdown}s",
                 color = Color.Gray,
                 fontSize = 14.sp
             )

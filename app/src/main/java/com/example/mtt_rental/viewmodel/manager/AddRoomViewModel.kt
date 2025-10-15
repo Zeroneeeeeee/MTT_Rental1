@@ -19,12 +19,69 @@ class AddRoomViewModel : ViewModel() {
     private val _saveResult = mutableStateOf<RoomSaveResult?>(null)
     val saveResult: State<RoomSaveResult?> = _saveResult
 
+    private val _rooms = mutableStateOf<List<Room>>(emptyList())
+    val rooms: State<List<Room>> = _rooms
+
     private val firebaseRef = FirebaseDatabase.getInstance().getReference("apartments")
 
-    fun saveRoomType(
+    fun loadRoomsByRoomType(idApartment: String, idRoomType: String) {
+        _isLoading.value = true
+        _error.value = null
+
+        firebaseRef.child(idApartment)
+            .child("roomTypes")
+            .child(idRoomType)
+            .child("rooms")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                _isLoading.value = false
+                if (snapshot.exists()) {
+                    val roomList = snapshot.children.mapNotNull { snap ->
+                        snap.getValue(Room::class.java)?.copy(
+                            idRoom = snap.key ?: ""
+                        )
+                    }
+                    _rooms.value = roomList
+                } else {
+                    _rooms.value = emptyList()
+                }
+            }
+            .addOnFailureListener { ex ->
+                _isLoading.value = false
+                _error.value = "Error loading rooms: ${ex.message}"
+                _rooms.value = emptyList()
+            }
+    }
+    fun deleteRoom(
         idApartment: String,
-        name: String,
-        maxRenter: Int,
+        idRoomType: String,
+        idRoom: String
+    ) {
+        _isLoading.value = true
+        firebaseRef.child(idApartment)
+            .child("roomTypes")
+            .child(idRoomType)
+            .child("rooms")
+            .child(idRoom)
+            .removeValue()
+            .addOnCompleteListener { task ->
+                _isLoading.value = false
+                if (task.isSuccessful) {
+                    _saveResult.value = RoomSaveResult.Success("Xóa phòng thành công")
+                } else {
+                    _saveResult.value = RoomSaveResult.Error("Lỗi khi xóa: ${task.exception?.message}")
+                }
+            }
+            .addOnFailureListener { ex ->
+                _isLoading.value = false
+                _saveResult.value = RoomSaveResult.Error("Lỗi khi xóa: ${ex.message}")
+            }
+    }
+
+    fun saveRoomType(
+        idRoomType: String,
+        idApartment: String,
+        maxRenter: Long,
         price: Long,
         area: Long,
         description: String
@@ -32,11 +89,8 @@ class AddRoomViewModel : ViewModel() {
         _isLoading.value = true
 
         try {
-            // Dùng name làm idRoomType, cần replace ký tự không hợp lệ
-            val roomTypeId = name.replace(" ", "_")
-
             val roomType = RoomType(
-                idRoomType = roomTypeId,
+                idRoomType = idRoomType,
                 idApartment = idApartment,
                 maxRenter = maxRenter,
                 price = price,
@@ -46,7 +100,7 @@ class AddRoomViewModel : ViewModel() {
 
             firebaseRef.child(idApartment)
                 .child("roomTypes")
-                .child(roomTypeId) // sử dụng name làm ID
+                .child(idRoomType) // sử dụng name làm ID
                 .setValue(roomType)
                 .addOnCompleteListener { task ->
                     _isLoading.value = false

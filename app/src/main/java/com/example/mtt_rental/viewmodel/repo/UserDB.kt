@@ -1,4 +1,4 @@
-package com.example.mtt_rental.repo
+package com.example.mtt_rental.viewmodel.repo
 
 import com.example.mtt_rental.model.User
 import com.google.firebase.database.DataSnapshot

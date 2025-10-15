@@ -1,7 +1,8 @@
 package com.example.mtt_rental.ui.tenant
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +32,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mtt_rental.viewmodel.tenant.LoginResult
 import com.example.mtt_rental.viewmodel.tenant.LoginViewModel
@@ -61,6 +63,7 @@ fun LoginScreen(
                 }
                 viewModel.clearLoginResult()
             }
+
             is LoginResult.Error -> {
                 // Handle specific field errors
                 when {
@@ -168,20 +171,20 @@ fun LoginScreen(
             }
         }
         Spacer(Modifier.weight(1f))
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Text(
                 text = "Don't have an account?",
                 color = Color.Gray,
                 fontSize = 13.sp
             )
-            Button(
-                onClick = toRegister,
-                contentPadding = PaddingValues(horizontal = 4.dp),
-                modifier = Modifier.padding(start = 2.dp),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
-            ) {
-                Text("Create", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            }
+            Spacer(Modifier.width(4.dp))
+            Text(
+                "Create",
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = Color.Blue,
+                modifier = Modifier.clickable(onClick = toRegister)
+            )
         }
         Spacer(Modifier.height(18.dp))
     }

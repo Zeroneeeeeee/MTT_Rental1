@@ -4,8 +4,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import com.example.mtt_rental.model.Apartment
-import com.example.mtt_rental.repo.UserRepo
-import com.example.mtt_rental.repo.ApartmentRepository
+import com.example.mtt_rental.utils.UserRepo
+import com.example.mtt_rental.viewmodel.repo.ApartmentRepository
 
 class ManagerManageViewModel : ViewModel() {
 

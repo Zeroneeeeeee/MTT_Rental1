@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import com.example.mtt_rental.model.User
-import com.example.mtt_rental.repo.AuthRepository
+import com.example.mtt_rental.viewmodel.repo.AuthRepository
 
 class OTPVerificationViewModel : ViewModel() {
 
